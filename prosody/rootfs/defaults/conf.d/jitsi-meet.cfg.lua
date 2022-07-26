@@ -21,6 +21,7 @@
 {{ $TURNS_PORT := .Env.TURNS_PORT | default "443" }}
 {{ $XMPP_AUTH_DOMAIN := .Env.XMPP_AUTH_DOMAIN | default "auth.meet.jitsi" -}}
 {{ $XMPP_DOMAIN := .Env.XMPP_DOMAIN | default "meet.jitsi" -}}
+{{ $XMPP_JWT_DOMAIN := .Env.XMPP_JWT_DOMAIN | default "jwt.meet.jitsi" -}}
 {{ $XMPP_GUEST_DOMAIN := .Env.XMPP_GUEST_DOMAIN | default "guest.meet.jitsi" -}}
 {{ $XMPP_INTERNAL_MUC_DOMAIN := .Env.XMPP_INTERNAL_MUC_DOMAIN | default "internal-muc.meet.jitsi" -}}
 {{ $XMPP_MUC_DOMAIN := .Env.XMPP_MUC_DOMAIN | default "muc.meet.jitsi" -}}
@@ -30,15 +31,18 @@
 {{ $ENABLE_SUBDOMAINS := .Env.ENABLE_SUBDOMAINS | default "true" | toBool -}}
 {{ $PROSODY_RESERVATION_ENABLED := .Env.PROSODY_RESERVATION_ENABLED | default "false" | toBool }}
 {{ $PROSODY_RESERVATION_REST_BASE_URL := .Env.PROSODY_RESERVATION_REST_BASE_URL | default "" }}
+{{ $JIBRI_XMPP_USER := .Env.JIBRI_XMPP_USER | default "jibri" -}}
 
 admins = {
     "{{ $JICOFO_AUTH_USER }}@{{ $XMPP_AUTH_DOMAIN }}",
-    "{{ $JVB_AUTH_USER }}@{{ $XMPP_AUTH_DOMAIN }}"
+    "{{ $JVB_AUTH_USER }}@{{ $XMPP_AUTH_DOMAIN }}",
+    "{{ $JIBRI_XMPP_USER }}@{{ $XMPP_AUTH_DOMAIN }}"
 }
 
 unlimited_jids = {
     "{{ $JICOFO_AUTH_USER }}@{{ $XMPP_AUTH_DOMAIN }}",
-    "{{ $JVB_AUTH_USER }}@{{ $XMPP_AUTH_DOMAIN }}"
+    "{{ $JVB_AUTH_USER }}@{{ $XMPP_AUTH_DOMAIN }}",
+    "{{ $JIBRI_XMPP_USER }}@{{ $XMPP_AUTH_DOMAIN }}"
 }
 
 plugin_paths = { "/prosody-plugins/", "/prosody-plugins-custom" }
@@ -66,11 +70,11 @@ external_services = {
 };
 {{ end }}
 
-{{ if and $ENABLE_AUTH (eq $AUTH_TYPE "jwt") .Env.JWT_ACCEPTED_ISSUERS }}
+{{ if and $ENABLE_AUTH .Env.JWT_ACCEPTED_ISSUERS }}
 asap_accepted_issuers = { "{{ join "\",\"" (splitList "," .Env.JWT_ACCEPTED_ISSUERS) }}" }
 {{ end }}
 
-{{ if and $ENABLE_AUTH (eq $AUTH_TYPE "jwt") .Env.JWT_ACCEPTED_AUDIENCES }}
+{{ if and $ENABLE_AUTH .Env.JWT_ACCEPTED_AUDIENCES }}
 asap_accepted_audiences = { "{{ join "\",\"" (splitList "," .Env.JWT_ACCEPTED_AUDIENCES) }}" }
 {{ end }}
 
@@ -208,6 +212,97 @@ VirtualHost "{{ $XMPP_RECORDER_DOMAIN }}"
     authentication = "internal_hashed"
 {{ end }}
 
+VirtualHost "{{ $XMPP_JWT_DOMAIN }}"
+    authentication = "{{ $JWT_AUTH_TYPE }}"
+    app_id = "{{ .Env.JWT_APP_ID }}"
+    app_secret = "{{ .Env.JWT_APP_SECRET }}"
+    allow_empty_token = {{ $JWT_ALLOW_EMPTY }}
+    {{ if $JWT_ASAP_KEYSERVER }}
+    asap_key_server = "{{ .Env.JWT_ASAP_KEYSERVER }}"
+    {{ end }}
+    
+    
+    ssl = {
+        key = "/config/certs/{{ $XMPP_JWT_DOMAIN }}.key";
+        certificate = "/config/certs/{{ $XMPP_JWT_DOMAIN }}.crt";
+    }
+    -- modules_enabled = {
+    --     "bosh";
+    --     {{ if $ENABLE_XMPP_WEBSOCKET }}
+    --     "websocket";
+    --     "smacks"; -- XEP-0198: Stream Management
+    --     {{ end }}
+    --     "pubsub";
+    --     "ping";
+    --     "speakerstats";
+    --     "conference_duration";
+    --     {{ if or .Env.TURN_HOST .Env.TURNS_HOST }}
+    --     "external_services";
+    --     {{ end }}
+    --     -- {{ if $ENABLE_LOBBY }}
+    --     -- "muc_lobby_rooms";
+    --     -- {{ end }}
+    --     {{ if $ENABLE_BREAKOUT_ROOMS }}
+    --     "muc_breakout_rooms";
+    --     {{ end }}
+    --     {{ if $ENABLE_AV_MODERATION }}
+    --     "av_moderation";
+    --     {{ end }}
+    --     {{ if .Env.XMPP_MODULES }}
+    --     "{{ join "\";\n\"" (splitList "," .Env.XMPP_MODULES) }}";
+    --     {{ end }}
+    --     {{ if and $ENABLE_AUTH (eq $AUTH_TYPE "ldap") }}
+    --     "auth_cyrus";
+    --     {{end}}
+    --     {{ if $PROSODY_RESERVATION_ENABLED }}
+    --     "reservations";
+    --     {{ end }}
+    -- }
+
+    modules_enabled = {
+        "websocket";
+        "bosh";
+        "pubsub";
+        "ping";
+    }
+
+    -- main_muc = "{{ $XMPP_MUC_DOMAIN }}"
+
+    -- {{ if $ENABLE_LOBBY }}
+    -- lobby_muc = "lobby.{{ $XMPP_DOMAIN }}"
+    -- {{ if $ENABLE_RECORDING }}
+    -- muc_lobby_whitelist = { "{{ $XMPP_RECORDER_DOMAIN }}" }
+    -- {{ end }}
+    -- {{ end }}
+
+    -- {{ if $PROSODY_RESERVATION_ENABLED }}
+    -- reservations_api_prefix = "{{ $PROSODY_RESERVATION_REST_BASE_URL }}" 
+    -- {{ end }}
+
+    -- {{ if $ENABLE_BREAKOUT_ROOMS }}
+    -- breakout_rooms_muc = "breakout.{{ $XMPP_DOMAIN }}"
+    -- {{ end }}
+
+    -- speakerstats_component = "speakerstats.{{ $XMPP_DOMAIN }}"
+    -- conference_duration_component = "conferenceduration.{{ $XMPP_DOMAIN }}"
+
+    -- {{ if $ENABLE_AV_MODERATION }}
+    -- av_moderation_component = "avmoderation.{{ $XMPP_DOMAIN }}"
+    -- {{ end }}
+
+    c2s_require_encryption = false
+
+VirtualHost "guest.{{ $XMPP_JWT_DOMAIN }}"
+    authentication = "{{ $JWT_AUTH_TYPE }}"
+    app_id = "{{ .Env.JWT_APP_ID }}"
+    app_secret = "{{ .Env.JWT_APP_SECRET }}"
+    allow_empty_token = {{ $JWT_ALLOW_EMPTY }}
+    {{ if $JWT_ASAP_KEYSERVER }}
+    asap_key_server = "{{ .Env.JWT_ASAP_KEYSERVER }}"
+    {{ end }}
+    
+    c2s_require_encryption = false
+
 Component "{{ $XMPP_INTERNAL_MUC_DOMAIN }}" "muc"
     storage = "memory"
     modules_enabled = {
@@ -224,12 +319,10 @@ Component "{{ $XMPP_MUC_DOMAIN }}" "muc"
     storage = "memory"
     modules_enabled = {
         "muc_meeting_id";
+        "{{ $JWT_TOKEN_AUTH_MODULE }}";
         {{ if .Env.XMPP_MUC_MODULES -}}
         "{{ join "\";\n\"" (splitList "," .Env.XMPP_MUC_MODULES) }}";
         {{ end -}}
-        {{ if and $ENABLE_AUTH (eq $AUTH_TYPE "jwt") -}}
-        "{{ $JWT_TOKEN_AUTH_MODULE }}";
-        {{ end }}
         {{ if and $ENABLE_AUTH (eq $AUTH_TYPE "matrix") $MATRIX_UVS_SYNC_POWER_LEVELS -}}
         "matrix_power_sync";
         {{ end -}}
@@ -243,9 +336,6 @@ Component "{{ $XMPP_MUC_DOMAIN }}" "muc"
     muc_room_cache_size = 1000
     muc_room_locking = false
     muc_room_default_public_jids = true
-    {{ if .Env.XMPP_MUC_CONFIGURATION -}}
-    {{ join "\n" (splitList "," .Env.XMPP_MUC_CONFIGURATION) }}
-    {{ end -}}
 
 Component "focus.{{ $XMPP_DOMAIN }}" "client_proxy"
     target_address = "{{ $JICOFO_AUTH_USER }}@{{ $XMPP_AUTH_DOMAIN }}"

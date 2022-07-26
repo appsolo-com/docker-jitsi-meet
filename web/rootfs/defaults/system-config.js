@@ -7,6 +7,7 @@
 {{ $PUBLIC_URL_DOMAIN := .Env.PUBLIC_URL | default "https://localhost:8443" | trimPrefix "https://" | trimSuffix "/" -}}
 {{ $XMPP_AUTH_DOMAIN := .Env.XMPP_AUTH_DOMAIN | default "auth.meet.jitsi" -}}
 {{ $XMPP_DOMAIN := .Env.XMPP_DOMAIN | default "meet.jitsi" -}}
+{{ $XMPP_FOCUS_DOMAIN := .Env.XMPP_FOCUS_DOMAIN | default "focus.meet.jitsi" -}}
 {{ $XMPP_GUEST_DOMAIN := .Env.XMPP_GUEST_DOMAIN | default "guest.meet.jitsi" -}}
 {{ $XMPP_MUC_DOMAIN := .Env.XMPP_MUC_DOMAIN | default "muc.meet.jitsi" -}}
 {{ $XMPP_MUC_DOMAIN_PREFIX := (split "." $XMPP_MUC_DOMAIN)._0  -}}
@@ -17,6 +18,8 @@ var config = {};
 if (!config.hasOwnProperty('hosts')) config.hosts = {};
 
 config.hosts.domain = '{{ $XMPP_DOMAIN }}';
+config.hosts.focus = '{{ $XMPP_FOCUS_DOMAIN }}';
+
 config.focusUserJid = '{{$JICOFO_AUTH_USER}}@{{$XMPP_AUTH_DOMAIN}}';
 
 {{ if $ENABLE_SUBDOMAINS -}}
