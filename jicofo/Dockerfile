@@ -21,8 +21,9 @@ RUN git clone https://github.com/jitsi/jicofo.git focus
 WORKDIR /focus
 RUN git checkout $JICOFO_TAG \
     && wget -O lib/maven-ant-tasks-2.1.3.jar https://repo.maven.apache.org/maven2/org/apache/maven/maven-ant-tasks/2.1.3/maven-ant-tasks-2.1.3.jar
-RUN mvn dependency:resolve
-RUN resources/build_deb_package.sh
+# RUN mvn dependency:resolve
+RUN resources/build_deb_package.sh \
+    && apt install -y /focus/jicofo_1.0-1-1_all.deb
     # && unzip dist/linux/jicofo-linux-x64-build.SVN.zip
 
 COPY rootfs/ /
