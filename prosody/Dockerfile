@@ -6,16 +6,11 @@ FROM ${JITSI_REPO}/base:${BASE_TAG} as builder
 RUN apt-dpkg-wrap apt-get update && \
     apt-dpkg-wrap apt-get install -y \
       build-essential \
-      # lua5.3 \
-      # liblua5.3-dev \
-      libsasl2-dev \
-      libssl-dev \
       lua5.4 \
       liblua5.4-dev \
       libreadline-dev \
       git \
       unzip \
-      # luarocks \
       wget && \
     mkdir /tmp/luarocks && \
     wget -qO - https://luarocks.github.io/luarocks/releases/luarocks-3.8.0.tar.gz | tar xfz - --strip-components 1 -C /tmp/luarocks && \
@@ -38,8 +33,6 @@ RUN wget -qO /etc/apt/trusted.gpg.d/prosody.gpg https://prosody.im/files/prosody
     echo "deb http://packages.prosody.im/debian bullseye main" > /etc/apt/sources.list.d/prosody.list && \
     apt-dpkg-wrap apt-get update && \
     apt-dpkg-wrap apt-get install -y \
-      # lua5.3 \
-      # liblua5.3-dev \
       lua5.4 \
       prosody \
       libldap-common \
@@ -50,10 +43,7 @@ RUN wget -qO /etc/apt/trusted.gpg.d/prosody.gpg https://prosody.im/files/prosody
       lua-ldap \
       lua-luaossl \
       lua-sec \
-      lua-dbi-postgresql \
-      luarocks \
       lua-unbound && \
-    luarocks install luadbi && \
     apt-dpkg-wrap apt-get -d install -y jitsi-meet-prosody && \
     dpkg -x /var/cache/apt/archives/jitsi-meet-prosody*.deb /tmp/pkg && \
     mv /tmp/pkg/usr/share/jitsi-meet/prosody-plugins /prosody-plugins && \
