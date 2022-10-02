@@ -14,7 +14,7 @@ ENV EMAIL "grant@appsolo.com"
 RUN apt-dpkg-wrap apt-get update \
     # apt-dpkg-wrap apt-get install -y jicofo && \
     && apt-get -y install git wget unzip devscripts \
-    && apt-get -y install default-jdk ant maven debhelper build-essential \
+    && apt-get -y install default-jdk ant maven debhelper build-essential ruby-hocon jq \
     && apt-cleanup
 
 RUN git clone https://github.com/jitsi/jicofo.git focus

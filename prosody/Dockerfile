@@ -6,8 +6,8 @@ FROM ${JITSI_REPO}/base:${BASE_TAG} as builder
 RUN apt-dpkg-wrap apt-get update && \
     apt-dpkg-wrap apt-get install -y \
       build-essential \
-      lua5.3 \
-      liblua5.3-dev \
+      # lua5.3 \
+      # liblua5.3-dev \
       libsasl2-dev \
       libssl-dev \
       lua5.4 \
@@ -38,8 +38,9 @@ RUN wget -qO /etc/apt/trusted.gpg.d/prosody.gpg https://prosody.im/files/prosody
     echo "deb http://packages.prosody.im/debian bullseye main" > /etc/apt/sources.list.d/prosody.list && \
     apt-dpkg-wrap apt-get update && \
     apt-dpkg-wrap apt-get install -y \
-      lua5.3 \
-      liblua5.3-dev \
+      # lua5.3 \
+      # liblua5.3-dev \
+      lua5.4 \
       prosody \
       libldap-common \
       sasl2-bin \
