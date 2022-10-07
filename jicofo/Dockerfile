@@ -17,7 +17,7 @@ RUN apt-dpkg-wrap apt-get update \
     && apt-get -y install default-jdk ant maven debhelper build-essential ruby-hocon jq \
     && apt-cleanup
 
-RUN git clone https://github.com/jitsi/jicofo.git focus
+RUN git clone https://github.com/appsolo/jicofo.git focus
 WORKDIR /focus
 RUN git checkout $JICOFO_TAG \
     && wget -O lib/maven-ant-tasks-2.1.3.jar https://repo.maven.apache.org/maven2/org/apache/maven/maven-ant-tasks/2.1.3/maven-ant-tasks-2.1.3.jar
